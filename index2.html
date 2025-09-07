@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storage Export & Import</title>
+</head>
+<body style="display:flex;flex-direction:column;gap:20px;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;">
+
+  <button id="export" style="padding:10px 20px;font-size:16px;cursor:pointer;">
+    📤 Export Storage & Cookies
+  </button>
+
+  <label style="padding:10px 20px;font-size:16px;cursor:pointer;background:#eee;border-radius:5px;">
+    📥 Import Storage & Cookies
+    <input type="file" id="import" accept="application/json" style="display:none;">
+  </label>
+
+  <script>
+    function getCookies() {
+      const cookies = {};
+      document.cookie.split(";").forEach(cookie => {
+        const [name, ...rest] = cookie.split("=");
+        if (!name) return;
+        cookies[name.trim()] = rest.join("=");
+      });
+      return cookies;
+    }
+
+    function setCookies(cookies) {
+      for (const key in cookies) {
+        document.cookie = `${key}=${cookies[key]}; path=/`;
+      }
+    }
+
+    // Export all
+    document.getElementById("export").addEventListener("click", () => {
+      const data = {
+        localStorage: {},
+        sessionStorage: {},
+        cookies: getCookies()
+      };
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        data.localStorage[key] = localStorage.getItem(key);
+      }
+
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        data.sessionStorage[key] = sessionStorage.getItem(key);
+      }
+
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "browser-storage-export.json";
+      a.click();
+
+      URL.revokeObjectURL(url);
+    });
+
+    // Import all
+    document.getElementById("import").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+
+          if (data.localStorage) {
+            for (const key in data.localStorage) {
+              localStorage.setItem(key, data.localStorage[key]);
+            }
+          }
+
+          if (data.sessionStorage) {
+            for (const key in data.sessionStorage) {
+              sessionStorage.setItem(key, data.sessionStorage[key]);
+            }
+          }
+
+          if (data.cookies) {
+            setCookies(data.cookies);
+          }
+
+          alert("✅ Import erfolgreich!");
+        } catch (err) {
+          alert("❌ Fehler beim Import: Ungültige Datei");
+        }
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
