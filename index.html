@@ -3,14 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Storage Export</title>
+  <title>Storage Export & Import</title>
 </head>
-<body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;">
+<body style="display:flex;flex-direction:column;gap:20px;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;">
+
   <button id="export" style="padding:10px 20px;font-size:16px;cursor:pointer;">
     📤 Export localStorage
   </button>
 
+  <label style="padding:10px 20px;font-size:16px;cursor:pointer;background:#eee;border-radius:5px;">
+    📥 Import localStorage
+    <input type="file" id="import" accept="application/json" style="display:none;">
+  </label>
+
   <script>
+    // Export localStorage
     document.getElementById("export").addEventListener("click", () => {
       const data = {};
       for (let i = 0; i < localStorage.length; i++) {
@@ -28,6 +35,26 @@
       a.click();
 
       URL.revokeObjectURL(url);
+    });
+
+    // Import localStorage
+    document.getElementById("import").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          for (const key in data) {
+            localStorage.setItem(key, data[key]);
+          }
+          alert("✅ Import erfolgreich!");
+        } catch (err) {
+          alert("❌ Fehler beim Import: Ungültige Datei");
+        }
+      };
+      reader.readAsText(file);
     });
   </script>
 </body>
